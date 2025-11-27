@@ -1,0 +1,81 @@
+services:
+
+  adguardhome:
+    container_name: adguardhome
+    image: adguard/adguardhome
+    restart: unless-stopped
+    ports:
+      - 53:53/udp
+      - 8080:80/tcp
+      - 5000:3000/tcp
+    volumes:
+      - ${DATA_PATH}/adguardhome/conf:/opt/adguardhome/conf
+      - ${DATA_PATH}/adguardhome/work:/opt/adguardhome/work
+
+  adguard-lancache-dns:
+    image: ghcr.io/sq4ind/adguardhome-lancache-dns:latest
+    container_name: adguard-lancache-dns
+    restart: unless-stopped
+    environment:
+      - ADGUARD_USERNAME=${ALD_ADGUARD_USERNAME}
+      - ADGUARD_PASSWORD=${ALD_ADGUARD_PASSWORD}
+      - LANCACHE_SERVER=${ALD_LANCACHE_SERVER}
+      - ADGUARD_API=${ALD_ADGUARD_API}
+      - CRON_SCHEDULE=${ALD_CRON_SCHEDULE}
+      - ALL_SERVICES=${ALD_ALL_SERVICES}
+      - LOG_LEVEL=${ALD_LOG_LEVEL}
+      - MAX_WORKERS=${ALD_MAX_WORKERS}
+      - BATCH_SIZE=${ALD_BATCH_SIZE}
+      - CACHE_FILE=${ALD_CACHE_FILE}
+    volumes:
+      - ${DATA_PATH}/adguard-lancache-dns/cache:/var/cache
+
+  monolithic:
+    image: jrcichra/lancachenet-monolithic:latest
+    container_name: lancache-monolith
+    restart: always
+    ports:
+      - 80:80/tcp
+      - 443:443/tcp
+    environment:
+      - USE_GENERIC_CACHE=${LANCACHE_USE_GENERIC_CACHE}
+      - LANCACHE_IP=${LANCACHE_LANCACHE_IP}
+      - DNS_BIND_IP=${LANCACHE_DNS_BIND_IP}
+      - UPSTREAM_DNS=${LANCACHE_UPSTREAM_DNS}
+      - CACHE_DISK_SIZE=${LANCACHE_CACHE_DISK_SIZE}
+      - CACHE_INDEX_SIZE=${LANCACHE_CACHE_INDEX_SIZE}
+      - CACHE_MAX_AGE=${LANCACHE_CACHE_MAX_AGE}
+      - TZ=${TZ}
+    volumes:
+      - ${DATA_PATH}/lancache/cache/:/data/cache
+      - ${DATA_PATH}/lancache/logs:/data/logs
+
+  lancache-manager-backend:
+    image: tsecretino/lancache-manager-backend
+    container_name: lancache-manager-backend
+    ports:
+      - 3000:3000
+    environment:
+      CONFIGS_PATH: ${LM_CONFIGS_PATH}
+      STEAM_API_KEY: ${LM_STEAM_API_KEY}
+      STEAM_USER_ID: ${LM_STEAM_USER_ID}
+      REDIS_URL: ${LM_REDIS_URL}
+      LANCACHE_LOGS_PATH: ${LM_LANCACHE_LOGS_PATH}
+    volumes:
+      - ${DATA_PATH}/lcm:/configs
+      - ${DATA_PATH}/lancache/logs:/lancachelogs
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  beszel-agent:
+    image: henrygd/beszel-agent
+    container_name: beszel-agent
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ${DATA_PATH}/beszel_agent_data:/var/lib/beszel-agent
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      LISTEN: ${BESZEL_LISTEN}
+      KEY: ${BESZEL_KEY}
+      TOKEN: ${BESZEL_TOKEN}
+      HUB_URL: ${BESZEL_HUB_URL}
