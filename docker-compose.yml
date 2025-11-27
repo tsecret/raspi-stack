@@ -1,8 +1,8 @@
 services:
 
   adguardhome:
+    image: adguard/adguardhome:latest
     container_name: adguardhome
-    image: adguard/adguardhome
     restart: unless-stopped
     ports:
       - 53:53/udp
@@ -17,16 +17,16 @@ services:
     container_name: adguard-lancache-dns
     restart: unless-stopped
     environment:
-      - ADGUARD_USERNAME=${ALD_ADGUARD_USERNAME}
-      - ADGUARD_PASSWORD=${ALD_ADGUARD_PASSWORD}
-      - LANCACHE_SERVER=${ALD_LANCACHE_SERVER}
-      - ADGUARD_API=${ALD_ADGUARD_API}
-      - CRON_SCHEDULE=${ALD_CRON_SCHEDULE}
-      - ALL_SERVICES=${ALD_ALL_SERVICES}
-      - LOG_LEVEL=${ALD_LOG_LEVEL}
-      - MAX_WORKERS=${ALD_MAX_WORKERS}
-      - BATCH_SIZE=${ALD_BATCH_SIZE}
-      - CACHE_FILE=${ALD_CACHE_FILE}
+      ADGUARD_USERNAME: ${ALD_ADGUARD_USERNAME}
+      ADGUARD_PASSWORD: ${ALD_ADGUARD_PASSWORD}
+      LANCACHE_SERVER: ${ALD_LANCACHE_SERVER}
+      ADGUARD_API: ${ALD_ADGUARD_API}
+      CRON_SCHEDULE: ${ALD_CRON_SCHEDULE}
+      ALL_SERVICES: ${ALD_ALL_SERVICES}
+      LOG_LEVEL: ${ALD_LOG_LEVEL}
+      MAX_WORKERS: ${ALD_MAX_WORKERS}
+      BATCH_SIZE: ${ALD_BATCH_SIZE}
+      CACHE_FILE: ${ALD_CACHE_FILE}
     volumes:
       - ${DATA_PATH}/adguard-lancache-dns/cache:/var/cache
 
@@ -38,19 +38,19 @@ services:
       - 80:80/tcp
       - 443:443/tcp
     environment:
-      - USE_GENERIC_CACHE=${LANCACHE_USE_GENERIC_CACHE}
-      - LANCACHE_IP=${LANCACHE_LANCACHE_IP}
-      - UPSTREAM_DNS=${LANCACHE_UPSTREAM_DNS}
-      - CACHE_DISK_SIZE=${LANCACHE_CACHE_DISK_SIZE}
-      - CACHE_INDEX_SIZE=${LANCACHE_CACHE_INDEX_SIZE}
-      - CACHE_MAX_AGE=${LANCACHE_CACHE_MAX_AGE}
-      - TZ=${TZ}
+      USE_GENERIC_CACHE: ${LANCACHE_USE_GENERIC_CACHE}
+      LANCACHE_IP: ${LANCACHE_LANCACHE_IP}
+      UPSTREAM_DNS: ${LANCACHE_UPSTREAM_DNS}
+      CACHE_DISK_SIZE: ${LANCACHE_CACHE_DISK_SIZE}
+      CACHE_INDEX_SIZE: ${LANCACHE_CACHE_INDEX_SIZE}
+      CACHE_MAX_AGE: ${LANCACHE_CACHE_MAX_AGE}
+      TZ: ${TZ}
     volumes:
       - ${DATA_PATH}/lancache/cache/:/data/cache
       - ${DATA_PATH}/lancache/logs:/data/logs
 
   lancache-manager-backend:
-    image: tsecretino/lancache-manager-backend
+    image: tsecretino/lancache-manager-backend:latest
     container_name: lancache-manager-backend
     ports:
       - 3000:3000
@@ -65,8 +65,16 @@ services:
       - ${DATA_PATH}/lancache/logs:/lancachelogs
       - /var/run/docker.sock:/var/run/docker.sock
 
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    environment:
+      WATCHTOWER_POLL_INTERVAL: ${WATCHTOWER_POLL_INTERVAL}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
   beszel-agent:
-    image: henrygd/beszel-agent
+    image: henrygd/beszel-agent:latest
     container_name: beszel-agent
     restart: unless-stopped
     network_mode: host
